@@ -11,7 +11,7 @@ class discriminator_block(nn.Module):
     def __init__(self,  in_channels, out_channels):
         super().__init__()
         self.discri_block = nn.Sequential(
-        nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+        nn.Conv2d(in_channels, out_channels, kernel_size=4, stride = 2, padding=1),
         nn.BatchNorm2d(out_channels),
         nn.LeakyReLU(inplace=True)
         )
@@ -20,17 +20,17 @@ class discriminator_block(nn.Module):
         return self.discri_block(x)
 
 class PatchGAN(nn.Module):
-    def __init__(self, n_channels = 4):
+    def __init__(self, n_channels = 2):
         super(PatchGAN, self).__init__()
         
         self.inc = nn.Sequential( 
-            nn.Conv2d(4, 64, kernel_size = 3, padding = 1), 
+            nn.Conv2d(2, 64, kernel_size = 4, stride = 2, padding = 1), 
             nn.LeakyReLU(inplace=True))
         self.down1 = discriminator_block(64, 128)
         self.down2 = discriminator_block(128, 256)
         self.down3 = discriminator_block(256, 512)
         self.down4 = discriminator_block(512, 512)
-        self.outc = nn.Conv2d(512, 1, kernel_size = 3, padding = 1)
+        self.outc = nn.Conv2d(512, 1, kernel_size = 4, stride = 2, padding = 1)
         
     def forward(self, x):
         x1 = self.inc(x)

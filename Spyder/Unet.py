@@ -70,7 +70,7 @@ class OutConv(nn.Module):
 ### 5. Architecture Unet
 
 class Unet(nn.Module):
-    def __init__(self, n_channels = 2, n_classes = 1, bilinear = True):
+    def __init__(self, n_channels = 3, n_classes = 1, bilinear = True):
         super(Unet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
