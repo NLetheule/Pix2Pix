@@ -73,7 +73,7 @@ for k in range(int(nb_imgs_zone*0.8*percent),int(nb_imgs_zone*percent)):
     
 ### 3. Chargement de la BDD
 
-batch_size = 2 #The batch size should generally be as big as your machine can take it.
+batch_size = 4 #The batch size should generally be as big as your machine can take it.
 
 training_dataset = p2p.ImgOptiqueSAR(img_folder[0], SAR_folder[0])
 validate_dataset = p2p.ImgOptiqueSAR(img_folder[1], SAR_folder[1])

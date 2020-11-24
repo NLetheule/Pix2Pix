@@ -8,10 +8,8 @@ Created on Wed Nov 18 10:17:58 2020
 import os
 import gdal
 import numpy as np
-
 from skimage import io
 
-import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as T
 
@@ -61,7 +59,7 @@ class ImgOptiqueSAR(Dataset):
                       #For the image, note that we are taking the three channels (using ":")
                       #for the 3rd dimension, and we do the conversion to tensor.
                       self.imgs.append(conversion(img[i - patch_size//2:i + patch_size // 2, j - patch_size // 2:j + patch_size // 2,:]))
-                      self.SARs.append(SAR[i - patch_size//2:i + patch_size // 2, j - patch_size // 2:j + patch_size // 2])
+                      self.SARs.append(conversion(SAR[i - patch_size//2:i + patch_size // 2, j - patch_size // 2:j + patch_size // 2]))
  
     def __len__(self):
         return len(self.imgs)
@@ -71,4 +69,38 @@ class ImgOptiqueSAR(Dataset):
         img = self.imgs[idx].float()
         SAR = self.SARs[idx].float()
 
-        return img, torch.from_numpy(SAR)
+        return img, SAR
+    
+def normalize_img(image):
+    out = image - np.nanmean(image)
+    image_std = np.nanstd(image)
+    
+    if image_std != 0:
+        out /= image_std
+        
+    out = np.clip(out, -3, 1)
+    
+    return out
+
+def normalize_imgs(img):
+
+    img = img - img.min()
+    img = img/img.max()
+    img = img.astype(float)
+    
+    return img
+
+def mix_list(list_SAR, list_img):
+    
+    array = [list_SAR, list_img]
+    array = np.transpose(array)
+    np.random.shuffle(array)
+    array = np.transpose(array)
+    list_SAR = array[0]   
+    list_img = array[1]
+    
+    return list_SAR, list_img
+
+
+
+
