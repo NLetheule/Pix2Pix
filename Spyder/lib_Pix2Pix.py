@@ -47,10 +47,11 @@ class ImgOptiqueSAR(Dataset):
         for img_index in range(0,len(img_folder)):
             print("Working on image " + str(img_index))
             #Load the tile and the corresponding SAR truth.
-            img = io.imread(img_folder[img_index])/2048
+            img = normalize_imgs(img_rgb(io.imread(img_folder[img_index])))
             SAR_open = gdal.Open(SAR_folder[img_index])
             SAR_band = SAR_open.GetRasterBand(1)
             SAR = SAR_band.ReadAsArray()
+            SAR = nan_to_zero(SAR)
 
             for i in np.arange(patch_size//2, img.shape[0] - patch_size // 2 + 1, overlap):
                 for j in np.arange(patch_size//2, img.shape[1] - patch_size // 2 + 1, overlap):
@@ -90,6 +91,15 @@ def normalize_imgs(img):
     
     return img
 
+def img_rgb(img):
+    
+    img_rgb = np.zeros(img.shape)
+    img_rgb[:,:,0] = img[:,:,2]
+    img_rgb[:,:,1] = img[:,:,1]
+    img_rgb[:,:,2] = img[:,:,0]
+    
+    return img_rgb
+
 def mix_list(list_SAR, list_img):
     
     array = [list_SAR, list_img]
@@ -101,6 +111,9 @@ def mix_list(list_SAR, list_img):
     
     return list_SAR, list_img
 
-
+def nan_to_zero(image):
+    out = image.copy()
+    out[np.isnan(out)] = 0
+    return out
 
 

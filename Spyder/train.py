@@ -103,7 +103,8 @@ def display_result_per_epoch():
     return
 
 def train_GAN(number_epochs, Generator, Discriminator, train_loader, 
-              validate_loader, batch_size):
+              validate_loader, batch_size, optimizer_G, optimizer_D,
+              loss_function):
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('Using device:', device)
@@ -118,12 +119,6 @@ def train_GAN(number_epochs, Generator, Discriminator, train_loader,
     training_losses_D = []
     validation_losses_G = []
     validation_losses_D = []
-    # Loss functions
-    loss_function = torch.nn.L1Loss()
-    
-    # Optimizers
-    optimizer_G = torch.optim.Adam(Generator.parameters(), lr=0.001)
-    optimizer_D = torch.optim.Adam(Discriminator.parameters(), lr=0.001)
     
     training_loss_G = 0
     training_loss_D = 0
@@ -141,7 +136,7 @@ def train_GAN(number_epochs, Generator, Discriminator, train_loader,
             # #Convert the imgs and SARs to torch Variable (will hold the computation
             # #graph).
             imgs = Variable(imgs).to(device)
-            SARs = Variable(SARs).type(torch.LongTensor).to(device)
+            SARs = Variable(SARs).to(device)
             fake_SAR = Generator(imgs.float())  
             
             ##### Train Generator #########
@@ -173,7 +168,7 @@ def train_GAN(number_epochs, Generator, Discriminator, train_loader,
             with torch.no_grad():
                 for j,  (imgs_val, SARs_val) in enumerate(validate_loader):
                     imgs_val = Variable(imgs_val).to(device)
-                    SARs_val = Variable(SARs_val).type(torch.LongTensor).to(device)
+                    SARs_val = Variable(SARs_val).to(device)
                   
                     fake_SAR_val = Generator(imgs_val.float())
                     
@@ -185,16 +180,16 @@ def train_GAN(number_epochs, Generator, Discriminator, train_loader,
                     validation_loss_D += loss_D.cpu().item() / len(validate_loader.dataset.imgs)
               
                     
-                    if marqueur == 0:
-                        SARs_val_display = SARs_val.cpu().detach().numpy()[0]
-                        SARs_val_display = SARs_val_display.reshape((256,256))
-                        plt.figure()
-                        plt.imshow(SARs_val_display, cmap = "gray")
-                        plt.title("Image SAR de référence") 
-                        plt.savefig("C:/Users/natsl/Documents/These/result/zone1/image1"+str(j)+"_ref.png")
+                if marqueur == 0:
+                    SARs_val_display = SARs_val.cpu().data.numpy()[0]
+                    SARs_val_display = SARs_val_display.reshape((256,256))
+                    plt.figure()
+                    plt.imshow(SARs_val_display, cmap = "gray")
+                    plt.title("Image SAR de référence") 
+                    plt.savefig("C:/Users/natsl/Documents/These/result/zone1/image1"+str(j)+"_ref.png")
                 marqueur = 1
                 # Enregistrement de la première image de validation pour visualiser l'évolution
-                fake_SAR_val_display = SARs_val.cpu().detach().numpy()[0]
+                fake_SAR_val_display = fake_SAR_val.cpu().detach().numpy()[0]
                 fake_SAR_val_display = fake_SAR_val_display.reshape((256,256))
                 plt.figure()
                 plt.imshow(fake_SAR_val_display, cmap = "gray")
@@ -203,7 +198,7 @@ def train_GAN(number_epochs, Generator, Discriminator, train_loader,
             
             # Determine approximate time left
             epoch_done = epoch + 1
-            epoch_left = number_epochs* (1 + 1/3) # temps de la validation pris en compte   
+            epoch_left = number_epochs - epoch_done
             time_left = datetime.timedelta(seconds=epoch_left * (time.time() - start_time)/ epoch_done)
     
             print("At epoch #" + str(epoch+1) + ", Generator validation loss = " +
@@ -217,13 +212,30 @@ def train_GAN(number_epochs, Generator, Discriminator, train_loader,
         if epoch > 0:
             
             plt.figure()
-            plt.plot(np.arange(len(training_losses_G)), training_losses_G)
-            plt.plot(np.arange(len(training_losses_D)), training_losses_D)
-            plt.plot(np.arange(len(validation_losses_G)), validation_losses_G)
-            plt.plot(np.arange(len(validation_losses_D)), validation_losses_D)
+            plt.title("Courbes des loss durant l'apprentissage")
+            plt.xlabel('Epochs')
+            plt.ylabel('Loss')
+            plt.plot(np.arange(len(training_losses_G)), training_losses_G, label = 'Generator training loss')
+            plt.plot(np.arange(len(training_losses_D)), training_losses_D, label = 'Discriminator training loss')
+            plt.plot(np.arange(len(validation_losses_G)), validation_losses_G, label = 'Generator validation loss')
+            plt.plot(np.arange(len(validation_losses_D)), validation_losses_D, label = 'Discriminator validation loss')
+            plt.legend()
+            plt.savefig("C:/Users/natsl/Documents/These/result/zone1/courbe_loss"+str(epoch)+".png")
             plt.show()
+            
+            
     
-        # Save your model
-        torch.save(Generator.state_dict(), "C:/Users/natsl/Documents/These/result/" + 'Generator_P2P_Unet_' + str(number_epochs) + "_epochs.pth")
-        torch.save(Discriminator.state_dict(), "C:/Users/natsl/Documents/These/result/" + 'Discriminator_P2P_PatchGAN_' + str(number_epochs) + "_epochs.pth")
+        # Save network
+        state_generator = {
+        'epoch': epoch,
+        'state_dict': Generator.state_dict(),
+        'optimizer': optimizer_G.state_dict()
+        }
+        state_discriminator = {
+        'epoch': epoch,
+        'state_dict': Discriminator.state_dict(),
+        'optimizer': optimizer_D.state_dict()
+        }
+        torch.save(state_generator, "C:/Users/natsl/Documents/These/result/Generator_P2P_Unet_" + str(epoch) + "_epochs.pth")
+        torch.save(state_discriminator, "C:/Users/natsl/Documents/These/result/Discriminator_P2P_PatchGAN_" + str(epoch) + "_epochs.pth")
     

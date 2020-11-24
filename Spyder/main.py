@@ -40,7 +40,7 @@ sorted_optique_list = sorted(list_optique_file_France)
 for k in range(int(nb_imgs_zone*nb_train_data*percent)):
     SAR_folder["train"].append(sorted_SAR_list[k])  
     img_folder["train"].append(sorted_optique_list[k]) 
-for k in range(int(nb_imgs_zone*nb_train_data*(1-percent)),int(nb_imgs_zone*nb_train_data*0.97)): #+nb_val_data)*percent)):    
+for k in range(int(nb_imgs_zone*nb_train_data*percent),int(nb_imgs_zone*(nb_train_data+nb_val_data)*percent)):    
     SAR_folder["val"].append(sorted_SAR_list[k])  
     img_folder["val"].append(sorted_optique_list[k]) 
 for k in range(int(nb_imgs_zone*(nb_train_data+nb_val_data)*percent*0.5),int(nb_imgs_zone*percent*0.5)):
@@ -77,6 +77,12 @@ Discriminator = PatchGAN.PatchGAN()
 # print(output_disc)
 
 ### 5. Chargement du réseau
+# Loss functions
+loss_function = torch.nn.L1Loss()
+
+# Optimizers
+Optimizer_G = torch.optim.Adam(Generator.parameters(), lr=0.001)
+Optimizer_D = torch.optim.Adam(Discriminator.parameters(), lr=0.001)
 # start_epoch = 3
 # Generator_weight_path = "C:/Users/natsl/Documents/These/result/" + 'Generator_P2P_Unet_' + str(start_epoch) + "_epochs.pth"
 # Discriminator_weight_path = "C:/Users/natsl/Documents/These/result/" + 'Discriminator_P2P_PatchGAN_' + str(start_epoch) + "_epochs.pth"
@@ -86,4 +92,5 @@ Discriminator = PatchGAN.PatchGAN()
 number_epochs = 3
 
 train.train_GAN(number_epochs, Generator, Discriminator, train_loader, 
-              validate_loader, batch_size)
+              validate_loader, batch_size, Optimizer_G, Optimizer_D,
+              loss_function)
